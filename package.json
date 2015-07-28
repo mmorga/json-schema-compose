@@ -1,0 +1,23 @@
+{
+  "name": "json-schema-compose",
+  "version": "0.8.0",
+  "description": "Reads json-schema files pulls in external refs and re-writes schema into a single file.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmorga/json-schema-compose.git"
+  },
+  "keywords": [
+    "json-schema",
+    "utilities"
+  ],
+  "author": "Mark Morga <markmorga@gmail.com> (http://markmorga.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mmorga/json-schema-compose/issues"
+  },
+  "homepage": "https://github.com/mmorga/json-schema-compose#readme"
+}
