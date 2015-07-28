@@ -1,0 +1,179 @@
+#!/usr/bin/env node
+
+'use strict';
+
+var Schema = require('../lib/schema.js').Schema;
+var path = require('path');
+var fs = require('fs');
+var prompt = require('prompt');
+var async = require('async');
+
+process.argv.shift();
+var appName = path.basename(process.argv.shift());
+
+if (process.argv.length === 0) {
+    console.log('Usage:'.red);
+    console.log('        ' + appName.green + ' [-s <schema-dir>] [--force] <root-schema> [<outfile>]');
+    console.log('\nDESCRIPTION'.red);
+    console.log('        Takes an input JSON Schema, reads in external json schema references and produces');
+    console.log('        a new self-contained json schema with only internal references.');
+    console.log('\nARGUMENTS'.red);
+    console.log('        root-schema');
+    console.log('            (Required) File containing the root schema for the composed output file.');
+    console.log('            File must contain JSON schema.\n');
+    console.log('        outfile');
+    console.log('            (Optional) File to write composed JSON Schema into.');
+    console.log('            Defaults to the root schema filename with "-full" appended to the base name.');
+    console.log('\nOPTIONS'.red);
+    console.log('        -s <path>');
+    console.log('            Sets the path to look for additional schema files. Must be a directory.');
+    console.log('            Default is the directory of the ' + 'root-schema'.green + ' file.\n');
+    console.log('        --force');
+    console.log('            Overwrite ' + 'outfile'.green + ' if it exists.\n');
+    process.exit(1);
+}
+
+var rootSchema, outputFile, schemaDir, askOverwrite = true, arg;
+
+while (process.argv.length) {
+    arg = process.argv.shift();
+
+    switch (arg) {
+    case '--schema':
+    case '-s':
+        schemaDir = process.argv.shift();
+        break;
+    case '--force':
+        askOverwrite = false;
+        break;
+    default:
+        if (!rootSchema) {
+            rootSchema = arg;
+        } else if (!outputFile) {
+            outputFile = arg;
+        }
+    }
+}
+
+async.series([
+    function (callback) {
+        console.log("starting 1");
+        fs.stat(rootSchema, function (err, stats) {
+            if (err) {
+                console.log(err);
+                process.exit(1);
+            }
+
+            if (!stats.isFile()) {
+                console.log("Error: rootSchema argument '" + arg + "' is not a file.");
+                process.exit(1);
+            }
+
+            fs.realpath(rootSchema, function (err, resolvedPath) {
+                if (err) {
+                    console.log(err);
+                    process.exit(1);
+                }
+                rootSchema = resolvedPath;
+                console.log("callback 1");
+                callback(null, {rootSchema: rootSchema});
+            });
+        });
+    },
+    function (callback) {
+        console.log("starting 2");
+        if (!schemaDir) {
+            schemaDir = path.dirname(rootSchema);
+        }
+        fs.stat(schemaDir, function (err, stats) {
+            if (err) {
+                console.log(err);
+                process.exit(1);
+            }
+
+            if (!stats.isDirectory()) {
+                console.log("Error: schemaDir option '" + schemaDir + "' is not a directory.");
+                process.exit(1);
+            }
+            fs.realpath(schemaDir, function (err, resolvedPath) {
+                if (err) {
+                    console.log(err);
+                    process.exit(1);
+                }
+                schemaDir = resolvedPath;
+                console.log("callback 2");
+                callback(null, schemaDir);
+            });
+        });
+    },
+    function (callback) {
+        console.log("starting 3");
+        if (!outputFile) {
+            outputFile = '';
+            if (path.dirname(rootSchema) !== '.') {
+                outputFile = path.dirname(rootSchema) + '/';
+            }
+            outputFile = outputFile +
+                path.basename(rootSchema, path.extname(rootSchema)) + '-full' +
+                path.extname(rootSchema);
+        }
+        console.log("callback 3");
+        callback();
+    },
+    function (callback) {
+        console.log("starting 4");
+        console.log(askOverwrite);
+        if (askOverwrite) {
+            fs.exists(outputFile, function (exists) {
+                if (exists) {
+                    console.log();
+                    prompt.start();
+                    prompt.get({
+                        name: 'confirm',
+                        description: "Output file '" + outputFile + "' exists. Overwrite? (y/n)",
+                        type: 'string',
+                        pattern: /^[yYnN]$/,
+                        message: 'Must respond with "y" or "n"',
+                        default: 'n',
+                    }, function (err, result) {
+                        if (err) {
+                            console.log(err);
+                            process.exit(1);
+                        }
+                        if (result.confirm !== 'y') {
+                            console.log("Exiting.");
+                            process.exit(1);
+                        }
+                        console.log("callback 4-1");
+                        callback();
+                    });
+                } else {
+                    callback();
+                }
+            });
+        } else {
+            console.log("callback 4-2");
+            callback();
+        }
+    }
+], function (err) { //This function gets called after the tasks have called their "task callbacks"
+    console.log("final function");
+
+    if (err) {
+        console.log("Error in sync: " + err);
+        process.exit(1);
+    }
+
+    console.log('Root Schema: ' + rootSchema);
+    console.log('Output File: ' + outputFile);
+    console.log('Schema Dir: ' + schemaDir);
+    console.log('Ask Overwrite: ' + askOverwrite);
+
+    var schema = new Schema(require(rootSchema), schemaDir).compose();
+
+    fs.writeFile(outputFile, JSON.stringify(schema, null, '  '), function (err) {
+        if (err) {
+            console.log('Error writing file. ' + err);
+        }
+    });
+});

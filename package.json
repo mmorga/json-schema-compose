@@ -19,5 +19,17 @@
   "bugs": {
     "url": "https://github.com/mmorga/json-schema-compose/issues"
   },
-  "homepage": "https://github.com/mmorga/json-schema-compose#readme"
+  "homepage": "https://github.com/mmorga/json-schema-compose#readme",
+  "dependencies": {
+    "async": "^1.4.0",
+    "json-pointer": "^0.3.0",
+    "prompt": "^0.2.14"
+  },
+  "devDependencies": {
+    "jslint": "^0.9.1",
+    "colors": "^1.0.3",
+    "grunt": "^0.4.5",
+    "grunt-mocha-test": "^0.12.7",
+    "mocha": "^2.2.5"
+  }
 }
