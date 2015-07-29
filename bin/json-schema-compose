@@ -164,11 +164,6 @@ async.series([
         process.exit(1);
     }
 
-    console.log('Root Schema: ' + rootSchema);
-    console.log('Output File: ' + outputFile);
-    console.log('Schema Dir: ' + schemaDir);
-    console.log('Ask Overwrite: ' + askOverwrite);
-
     var schema = new Schema(require(rootSchema), schemaDir).compose();
 
     fs.writeFile(outputFile, JSON.stringify(schema, null, '  '), function (err) {

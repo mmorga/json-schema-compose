@@ -1,6 +1,6 @@
 {
   "name": "json-schema-compose",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Reads json-schema files pulls in external refs and re-writes schema into a single file.",
   "main": "index.js",
   "scripts": {
